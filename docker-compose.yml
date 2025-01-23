@@ -1,0 +1,181 @@
+version: "3.9"
+
+services:
+  # MariaDB for all services
+  mariadb:
+    image: mariadb:11
+    container_name: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: VALOR13Selene
+    volumes:
+      - /aether/wordpress_db:/var/lib/mysql
+      - /aether/drupal_db:/var/lib/mysql
+      - /aether/laravel_db:/var/lib/mysql
+      - /aetherteam/nextcloud-docker/db:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - aether-backend
+
+  # Nextcloud service
+  nextcloud:
+    image: nextcloud:latest
+    container_name: nextcloud
+    restart: always
+    depends_on:
+      - mariadb
+    environment:
+      MYSQL_HOST: mariadb
+      MYSQL_DB: nextcloud
+      MYSQL_USER: nc_user
+      MYSQL_PASSWORD: nc_password
+      VIRTUAL_HOST: nextcloud.omniversal.cloud
+      LETSENCRYPT_HOST: nextcloud.omniversal.cloud
+      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+    volumes:
+      - /aetherteam/nextcloud-docker/html:/var/www/html
+      - /aetherteam/nextcloud-docker/data:/var/www/html/data
+    ports:
+      - "8080:80"
+    networks:
+      - aether-backend
+      - aether-local
+      - aether-public
+
+  # WordPress service
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress
+    restart: always
+    depends_on:
+      - mariadb
+    environment:
+      MYSQL_HOST: mariadb
+      MYSQL_DB: wordpress
+      MYSQL_USER: wp_user
+      MYSQL_PASSWORD: wp_password
+      VIRTUAL_HOST: wordpress.omniversal.cloud
+      LETSENCRYPT_HOST: wordpress.omniversal.cloud
+      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+    volumes:
+      - /aether/wordpress/html:/var/www/html
+      - /aether/wordpress/data:/var/www/html/wp-content/uploads
+    ports:
+      - "8081:80"
+    networks:
+      - aether-backend
+      - aether-local
+      - aether-public
+
+  # Drupal service
+  drupal:
+    image: drupal:latest
+    container_name: drupal
+    restart: always
+    depends_on:
+      - mariadb
+    environment:
+      MYSQL_HOST: mariadb
+      MYSQL_DB: drupal
+      MYSQL_USER: drupal_user
+      MYSQL_PASSWORD: drupal_password
+      VIRTUAL_HOST: drupal.omniversal.cloud
+      LETSENCRYPT_HOST: drupal.omniversal.cloud
+      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+    volumes:
+      - /aether/drupal/html:/var/www/html
+      - /aether/drupal/data:/var/www/html/sites/default/files
+    ports:
+      - "8082:80"
+    networks:
+      - aether-backend
+      - aether-local
+      - aether-public
+
+  # Laravel service
+  laravel:
+    image: laravel:latest
+    container_name: laravel-app
+    restart: always
+    depends_on:
+      - mariadb
+    environment:
+      MYSQL_HOST: mariadb
+      MYSQL_DB: laravel
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_password
+      VIRTUAL_HOST: laravel.omniversal.cloud
+      LETSENCRYPT_HOST: laravel.omniversal.cloud
+      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+    volumes:
+      - /aether/laravel/html:/var/www/html
+      - /aether/laravel/data:/var/www/html/storage
+    ports:
+      - "8083:80"
+    networks:
+      - aether-backend
+      - aether-local
+      - aether-public
+
+  # Local NGINX reverse proxy
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    depends_on:
+      - nextcloud
+      - wordpress
+      - drupal
+      - laravel
+    environment:
+      DEFAULT_HOST: nextcloud.omniversal.local
+    volumes:
+      - /aether/nginx:/etc/nginx/conf.d
+    ports:
+      - "8880:80"
+      - "8443:443"
+    networks:
+      - aether-local
+      - aether-backend
+
+  # Public NGINX-Proxy reverse proxy
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    restart: always
+    environment:
+      DEFAULT_HOST: nextcloud.omniversal.cloud
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /aether/nginx/certs:/etc/nginx/certs
+      - /aether/nginx/vhost:/etc/nginx/vhost.d
+      - /aether/nginx/html:/usr/share/nginx/html
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - aether-public
+
+  # Let's Encrypt SSL companion for NGINX-Proxy
+  nginx-proxy-acme:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: nginx-proxy-acme
+    restart: always
+    depends_on:
+      - nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /aether/nginx/certs:/etc/nginx/certs
+      - /aether/nginx/vhost:/etc/nginx/vhost.d
+      - /aether/nginx/html:/usr/share/nginx/html
+    networks:
+      - aether-public
+
+networks:
+  aether-backend:
+    driver: bridge
+  aether-local:
+    driver: bridge
+  aether-public:
+    driver: bridge
