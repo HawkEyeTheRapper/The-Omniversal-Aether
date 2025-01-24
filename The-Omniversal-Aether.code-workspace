@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "Omniversal-Aether",
+			"path": "../../../MasterConfig/Omniversal-Aether"
+		}
+	],
+	"settings": {
+		"terminal.integrated.sendKeybindingsToShell": true,
+		"terminal.integrated.commandsToSkipShell": [
+			""
+		]
+	}
+}

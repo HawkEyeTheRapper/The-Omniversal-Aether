@@ -7,16 +7,17 @@ services:
     container_name: mariadb
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: VALOR13Selene
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
-      - /aether/wordpress_db:/var/lib/mysql
-      - /aether/drupal_db:/var/lib/mysql
-      - /aether/laravel_db:/var/lib/mysql
-      - /aetherteam/nextcloud-docker/db:/var/lib/mysql
+      - /mnt/aether/docker-data/wordpress_db:/var/lib/mysql
+      - /mnt/aether/docker-data/drupal_db:/var/lib/mysql
+      - /mnt/aether/docker-data/laravel_db:/var/lib/mysql
+      - /mnt/aether/docker-backend/nextcloud/db:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
       - aether-backend
+    mem_limit: 2g
 
   # Nextcloud service
   nextcloud:
@@ -26,22 +27,23 @@ services:
     depends_on:
       - mariadb
     environment:
-      MYSQL_HOST: mariadb
-      MYSQL_DB: nextcloud
-      MYSQL_USER: nc_user
-      MYSQL_PASSWORD: nc_password
-      VIRTUAL_HOST: nextcloud.omniversal.cloud
-      LETSENCRYPT_HOST: nextcloud.omniversal.cloud
-      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_DB: ${NEXTCLOUD_DB}
+      MYSQL_USER: ${NEXTCLOUD_USER}
+      MYSQL_PASSWORD: ${NEXTCLOUD_PASSWORD}
+      VIRTUAL_HOST: ${NEXTCLOUD_VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${NEXTCLOUD_LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     volumes:
-      - /aetherteam/nextcloud-docker/html:/var/www/html
-      - /aetherteam/nextcloud-docker/data:/var/www/html/data
+      - /mnt/aetherteam/nextcloud/backend/html:/var/www/html
+      - /mnt/aetherteam/nextcloud/backend/data:/var/www/html/data
     ports:
       - "8080:80"
     networks:
       - aether-backend
       - aether-local
       - aether-public
+    mem_limit: 2g
 
   # WordPress service
   wordpress:
@@ -51,22 +53,23 @@ services:
     depends_on:
       - mariadb
     environment:
-      MYSQL_HOST: mariadb
-      MYSQL_DB: wordpress
-      MYSQL_USER: wp_user
-      MYSQL_PASSWORD: wp_password
-      VIRTUAL_HOST: wordpress.omniversal.cloud
-      LETSENCRYPT_HOST: wordpress.omniversal.cloud
-      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_DB: ${WORDPRESS_DB}
+      MYSQL_USER: ${WORDPRESS_USER}
+      MYSQL_PASSWORD: ${WORDPRESS_PASSWORD}
+      VIRTUAL_HOST: ${WORDPRESS_VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${WORDPRESS_LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     volumes:
-      - /aether/wordpress/html:/var/www/html
-      - /aether/wordpress/data:/var/www/html/wp-content/uploads
+      - /mnt/aether/docker-data/wordpress/html:/var/www/html
+      - /mnt/aether/docker-data/wordpress/data:/var/www/html/wp-content/uploads
     ports:
       - "8081:80"
     networks:
       - aether-backend
       - aether-local
       - aether-public
+    mem_limit: 2g
 
   # Drupal service
   drupal:
@@ -76,22 +79,23 @@ services:
     depends_on:
       - mariadb
     environment:
-      MYSQL_HOST: mariadb
-      MYSQL_DB: drupal
-      MYSQL_USER: drupal_user
-      MYSQL_PASSWORD: drupal_password
-      VIRTUAL_HOST: drupal.omniversal.cloud
-      LETSENCRYPT_HOST: drupal.omniversal.cloud
-      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_DB: ${DRUPAL_DB}
+      MYSQL_USER: ${DRUPAL_USER}
+      MYSQL_PASSWORD: ${DRUPAL_PASSWORD}
+      VIRTUAL_HOST: ${DRUPAL_VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${DRUPAL_LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     volumes:
-      - /aether/drupal/html:/var/www/html
-      - /aether/drupal/data:/var/www/html/sites/default/files
+      - /mnt/aether/docker-data/drupal/html:/var/www/html
+      - /mnt/aether/docker-data/drupal/data:/var/www/html/sites/default/files
     ports:
       - "8082:80"
     networks:
       - aether-backend
       - aether-local
       - aether-public
+    mem_limit: 2g
 
   # Laravel service
   laravel:
@@ -101,22 +105,23 @@ services:
     depends_on:
       - mariadb
     environment:
-      MYSQL_HOST: mariadb
-      MYSQL_DB: laravel
-      MYSQL_USER: laravel_user
-      MYSQL_PASSWORD: laravel_password
-      VIRTUAL_HOST: laravel.omniversal.cloud
-      LETSENCRYPT_HOST: laravel.omniversal.cloud
-      LETSENCRYPT_EMAIL: devops@omniversal.cloud
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_DB: ${LARAVEL_DB}
+      MYSQL_USER: ${LARAVEL_USER}
+      MYSQL_PASSWORD: ${LARAVEL_PASSWORD}
+      VIRTUAL_HOST: ${LARAVEL_VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${LARAVEL_LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     volumes:
-      - /aether/laravel/html:/var/www/html
-      - /aether/laravel/data:/var/www/html/storage
+      - /mnt/aether/docker-data/laravel/html:/var/www/html
+      - /mnt/aether/docker-data/laravel/data:/var/www/html/storage
     ports:
       - "8083:80"
     networks:
       - aether-backend
       - aether-local
       - aether-public
+    mem_limit: 2g
 
   # Local NGINX reverse proxy
   nginx:
@@ -129,15 +134,16 @@ services:
       - drupal
       - laravel
     environment:
-      DEFAULT_HOST: nextcloud.omniversal.local
+      DEFAULT_HOST: ${DEFAULT_HOST}
     volumes:
-      - /aether/nginx:/etc/nginx/conf.d
+      - /mnt/aether/docker-backend/nginx:/etc/nginx/conf.d
     ports:
       - "8880:80"
       - "8443:443"
     networks:
       - aether-local
       - aether-backend
+    mem_limit: 2g
 
   # Public NGINX-Proxy reverse proxy
   nginx-proxy:
@@ -145,17 +151,18 @@ services:
     container_name: nginx-proxy
     restart: always
     environment:
-      DEFAULT_HOST: nextcloud.omniversal.cloud
+      DEFAULT_HOST: ${DEFAULT_HOST}
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      - /aether/nginx/certs:/etc/nginx/certs
-      - /aether/nginx/vhost:/etc/nginx/vhost.d
-      - /aether/nginx/html:/usr/share/nginx/html
+      - /mnt/aether/docker-backend/nginx/certs:/etc/nginx/certs
+      - /mnt/aether/docker-backend/nginx/vhost:/etc/nginx/vhost.d
+      - /mnt/aether/docker-backend/nginx/html:/usr/share/nginx/html
     ports:
       - "80:80"
       - "443:443"
     networks:
       - aether-public
+    mem_limit: 2g
 
   # Let's Encrypt SSL companion for NGINX-Proxy
   nginx-proxy-acme:
@@ -166,11 +173,12 @@ services:
       - nginx-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /aether/nginx/certs:/etc/nginx/certs
-      - /aether/nginx/vhost:/etc/nginx/vhost.d
-      - /aether/nginx/html:/usr/share/nginx/html
+      - /mnt/aether/docker-backend/nginx/certs:/etc/nginx/certs
+      - /mnt/aether/docker-backend/nginx/vhost:/etc/nginx/vhost.d
+      - /mnt/aether/docker-backend/nginx/html:/usr/share/nginx/html
     networks:
       - aether-public
+    mem_limit: 2g
 
 networks:
   aether-backend:
